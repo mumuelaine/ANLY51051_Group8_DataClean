@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # Set up working directory
 setwd("/Users/xwan/Documents/HU/ANLY 510-51/team project/ANLY51051_Group8_DataClean/")
 # Read original dirty data as dirty_data
-dirty_data <- read.csv("dirty_data.csv",head=TRUE,sep=",")
+dirty_data <- read.csv("dirty_data.csv",head=TRUE,sep=",", stringsAsFactors=FALSE)
 # Inspect dirty_data data structure
 str(dirty_data)
 # Summarize dirty data
@@ -29,18 +29,24 @@ library(stringr)
 areanames <- c("Birmingham", "Coventry", "Dudley", "Sandwell", "Solihull", "Walsall", "Wolverhampton")
 # Set fisrt letter upper case function
 firtUpper <- function(x) paste0(toupper(substr(x, 1, 1)), tolower(substring(x, 2)))
+# Determin two strings are exactly the same or not
+sameStr <- function(x, y) {
+  identical(x, y)
+}
 # Assign appropriate value to missing value in Area
 nRowsStr <- nrow(cleandata)
-nRowsStr
 for(i in 1:nRowsStr) {
-  print(cleandata[i,3])
   # Trim Data
   cleandata[i,3] <- str_trim(cleandata[i,3])
   cleandata[i,4] <- str_trim(cleandata[i,4])
+  if (i == 3) print(cleandata[i, 3])
   # Remove special characters from Street 1 and Street 2 variables.
-  cleandata[i,3] <- str_replace_all(cleandata[i,3], "[^[a-zA-Z]]", "")
-  cleandata[i,4] <- str_replace_all(cleandata[i,4], "[^[a-zA-Z]]", "")
-  
+  cleandata[i,3] <- str_replace_all(cleandata[i,3], "[^[a-zA-Z]]", " ")
+  cleandata[i,4] <- str_replace_all(cleandata[i,4], "[^[a-zA-Z]]", " ")
+  # Remove Street.2 if it has the same value of Street
+  if (sameStr(cleandata[i,3], cleandata[i,4])) {
+    cleandata[i, 4] <- ""
+  }
   for (area in areanames) { # loop through area names
     # determine whether Street or Street.2 contains area name
     if (grepl(area, cleandata[i,3], ignore.case = TRUE) || grepl(area, cleandata[i,4], ignore.case = TRUE)) {
@@ -48,11 +54,24 @@ for(i in 1:nRowsStr) {
       cleandata[i,2] <- area
     }
   }
-  firtUpper(substr(cleandata[i,3], 0, 2))
-  
+  cleandata[i,3] <- firtUpper(cleandata[i,3])
+  cleandata[i,4] <- firtUpper(cleandata[i,4])
   # Padding (the white space before and after the text) from Street 1 and Street 2 variables.
   cleandata[i,3] <- str_pad(cleandata[i,3], width = str_length(cleandata[i,3]) + 2 ,side = "both",pad=" ")
-  # clean_data[i,4] <- str_pad(clean_data[i,4], width =str_length(clean_data[i,4]) + 2 ,side = "both",pad=" ")
+  cleandata[i,4] <- str_pad(cleandata[i,4], width =str_length(cleandata[i,4]) + 2 ,side = "both",pad=" ")
+  # the street denominations are following the same standard (for example, all streets are indicated as “str.”, avenues as “ave.”, etc.
+  if (grepl("street", cleandata[i,3], ignore.case = TRUE) || grepl("street", cleandata[i,4], ignore.case = TRUE)) {
+    cleandata[i,3] <- str_replace(cleandata[i,3], "[sS]treet", "str.")
+    cleandata[i,4] <- str_replace(cleandata[i,4], "[sS]treet", "str.")
+  }
+  if (grepl("road", cleandata[i,3], ignore.case = TRUE) || grepl("road", cleandata[i,4], ignore.case = TRUE)) {
+    cleandata[i,3] <- str_replace(cleandata[i,3], "[rR]oad", "rd.")
+    cleandata[i,4] <- str_replace(cleandata[i,4], "[rR]treet", "rd.")
+  }
+  if (grepl("avenue", cleandata[i,3], ignore.case = TRUE) || grepl("avenue", cleandata[i,4], ignore.case = TRUE)) {
+    cleandata[i,3] <- str_replace(cleandata[i,3], "[aA]enue", "ave.")
+    cleandata[i,4] <- str_replace(cleandata[i,4], "[aA]enue", "ave.")
+  }
 }
 
 # Remove the “Strange HTML column”
@@ -61,15 +80,5 @@ tail(cleandata)
 # Inspect clean data struture
 str(cleandata)
 # Write clean_data as clean_data.csv file to working directory
-# write.csv(clean_data, file = "clean1_data.csv", row.names = FALSE, na="", col.names = FALSE, sep = ",")
+write.csv(cleandata, file = "clean_data.csv", row.names = FALSE, na="", col.names = FALSE, sep = ",")
 ```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
