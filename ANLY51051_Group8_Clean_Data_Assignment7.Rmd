@@ -1,0 +1,75 @@
+---
+title: "ANLY510_Group8_Data_Clean_Assignment#7"
+author: "Xiaowei Wan"
+date: "7/7/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Preparing original dirty data
+
+```{r original data, warning=FALSE}
+# Set up working directory
+setwd("/Users/xwan/Documents/HU/ANLY 510-51/team project/ANLY51051_Group8_DataClean/")
+# Read original dirty data as dirty_data
+dirty_data <- read.csv("dirty_data.csv",head=TRUE,sep=",")
+# Inspect dirty_data data structure
+str(dirty_data)
+# Summarize dirty data
+summary(dirty_data)
+# Assign a clean_data
+cleandata <- dirty_data
+head(cleandata)
+# Trim Street and Street.2
+library(stringr)
+# Assign area names
+areanames <- c("Birmingham", "Coventry", "Dudley", "Sandwell", "Solihull", "Walsall", "Wolverhampton")
+# Set fisrt letter upper case function
+firtUpper <- function(x) paste0(toupper(substr(x, 1, 1)), tolower(substring(x, 2)))
+# Assign appropriate value to missing value in Area
+nRowsStr <- nrow(cleandata)
+nRowsStr
+for(i in 1:nRowsStr) {
+  print(cleandata[i,3])
+  # Trim Data
+  cleandata[i,3] <- str_trim(cleandata[i,3])
+  cleandata[i,4] <- str_trim(cleandata[i,4])
+  # Remove special characters from Street 1 and Street 2 variables.
+  cleandata[i,3] <- str_replace_all(cleandata[i,3], "[^[a-zA-Z]]", "")
+  cleandata[i,4] <- str_replace_all(cleandata[i,4], "[^[a-zA-Z]]", "")
+  
+  for (area in areanames) { # loop through area names
+    # determine whether Street or Street.2 contains area name
+    if (grepl(area, cleandata[i,3], ignore.case = TRUE) || grepl(area, cleandata[i,4], ignore.case = TRUE)) {
+      # If true, then assign area name to clean_data$area
+      cleandata[i,2] <- area
+    }
+  }
+  firtUpper(substr(cleandata[i,3], 0, 2))
+  
+  # Padding (the white space before and after the text) from Street 1 and Street 2 variables.
+  cleandata[i,3] <- str_pad(cleandata[i,3], width = str_length(cleandata[i,3]) + 2 ,side = "both",pad=" ")
+  # clean_data[i,4] <- str_pad(clean_data[i,4], width =str_length(clean_data[i,4]) + 2 ,side = "both",pad=" ")
+}
+
+# Remove the “Strange HTML column”
+cleandata$Strange.HTML <- NULL
+tail(cleandata)
+# Inspect clean data struture
+str(cleandata)
+# Write clean_data as clean_data.csv file to working directory
+# write.csv(clean_data, file = "clean1_data.csv", row.names = FALSE, na="", col.names = FALSE, sep = ",")
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
